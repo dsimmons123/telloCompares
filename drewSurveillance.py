@@ -1,30 +1,21 @@
-import pygame
+
+from djitellopy import Tello
 import KeyPressModule as kp
-from time import sleep
+import cv2
+import time
+
 
 kp.init()
-
 tello = Tello()
 tello.connect()
 print(tello.get_battery())
+global img
+tello.streamon()
 
-def init():
-    pygame.init()
-    win = pygame.display.set_mode((400,400))
-
-def getKey(keyName):
-    ans = False
-
-    for eve in pygame.event.get(): pass
-    keyInput = pygame.key.get_pressed()
-    myKey = getattr(pygame, 'K_{}'.format(keyName))
-    if keyInput[myKey]:
-        ans = True
-    pygame.display.update()
-    return ans
-        
 def getKeyboardInput():
+
     lr, fb, ud, yv = 0, 0, 0, 0
+
     speed = 50
 
     if kp.getKey("LEFT"): lr = -speed
@@ -33,21 +24,28 @@ def getKeyboardInput():
     if kp.getKey("UP"): fb = speed
     elif kp.getKey("DOWN"): fb = -speed
 
-    if kp.getKey("w"): ud = speed
+    if kp.getKey("w"):ud = speed
     elif kp.getKey("s"): ud = -speed
 
-    if kp.getKey("a"): yv = -speed
+    if kp.getKey("a"):yv = -speed
     elif kp.getKey("d"): yv = speed
 
-    if kp.getKey("q"): tello.land()
+    if kp.getKey("q"): tello.land(); time.sleep(3)
     if kp.getKey("e"): tello.takeoff()
+
+    if kp.getKey("z"):
+        cv2.imwrite(f'Resources/Images/{time.time()}.jpg', img)
+        time.sleep(0.3)
 
     return [lr, fb, ud, yv]
 
-if __name__ == '__main__':
-    init()
-    while True:
-        vals = getKeyboardInput();
-        tello.send_rc_control(vals[0], vals[1], vals[2], vals[3]);
-        getKey();
-        sleep(0.05)
+while True:
+
+    vals = getKeyboardInput()
+
+    tello.send_rc_control(vals[0], vals[1], vals[2], vals[3])
+
+    img = tello.get_frame_read().frame
+    img = cv2.resize(img, (360, 240))
+    cv2.imshow("image", img)
+    cv2.waitKey(1)
